@@ -7,6 +7,7 @@ const nunjucks = require('nunjucks')
 const LocalStrategy = require('passport-local')
 
 module.exports = function createApp (users) {
+
   const app = express()
 
   nunjucks.configure([
@@ -21,6 +22,7 @@ module.exports = function createApp (users) {
   app.use(express.static('./node_modules/govuk_template_jinja/assets'))
 
   app.use(bodyParser.urlencoded({extended: false}))
+
   app.use(session({
     secret: 'maximum security keyboard cat',
     resave: true,
@@ -45,6 +47,7 @@ module.exports = function createApp (users) {
   passport.serializeUser((user, done) => done(null, JSON.stringify(user)))
   passport.deserializeUser((user, done) => done(null, JSON.parse(user)))
 
+  // Require user object to be defined in the session.
   const redirectIfNoSession = (req, res, next) => {
     if (!req.user) res.redirect('/')
     else next()
@@ -53,15 +56,15 @@ module.exports = function createApp (users) {
   app.get('/', (req, res) => res.render('index.njk'))
 
   app.post('/authenticate', passport.authenticate('local', {
-    failureRedirect: '/authentication-failed-page',
-    successRedirect: '/service-landing-page'
+    failureRedirect: '/authentication-failed',
+    successRedirect: '/service-landing'
   }))
 
-  app.get('/service-landing-page', (req, res) => {
+  app.get('/service-landing', redirectIfNoSession, (req, res) => {
     res.render('service-landing-page.njk', { user: req.user })
   })
 
-  app.get('/authentication-failed-page', (req, res) => {
+  app.get('/authentication-failed', (req, res) => {
     res.render('authentication-failed-page.njk', { error: 'Bad username or password'})
   })
 
